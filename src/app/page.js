@@ -30,7 +30,8 @@ export default function Home() {
       return; // Stop navigation if insert fails
     }
 
-    router.push("/join-success");
+    // Redirect to success page with email parameter
+    router.push(`/join-success?email=${encodeURIComponent(email.trim())}`);
   };
 
   return (
