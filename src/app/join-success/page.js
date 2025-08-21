@@ -12,45 +12,46 @@ export default function JoinSuccess() {
 
   useEffect(() => {
     const fidParam = searchParams.get("fid");
+
+    async function fetchUserPosition(fid) {
+      try {
+        const res = await fetch(`/api/position?fid=${encodeURIComponent(fid)}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setPosition(data.position);
+          setTotalUsers(data.total);
+        } else {
+          console.error("API error:", data.error);
+          fetchTotalUsers();
+        }
+      } catch (err) {
+        console.error("Network error:", err);
+        fetchTotalUsers();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function fetchTotalUsers() {
+      try {
+        const res = await fetch(`/api/position?fid=__dummy__`);
+        const data = await res.json();
+        setTotalUsers(data.total || 0);
+      } catch (err) {
+        console.error("Error fetching total:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     if (fidParam) {
       setFid(fidParam);
       fetchUserPosition(fidParam);
     } else {
       fetchTotalUsers();
     }
-  }, [searchParams]);
-
-  const fetchUserPosition = async (fid) => {
-    try {
-      const res = await fetch(`/api/position?fid=${encodeURIComponent(fid)}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setPosition(data.position);
-        setTotalUsers(data.total);
-      } else {
-        console.error("API error:", data.error);
-        fetchTotalUsers();
-      }
-    } catch (err) {
-      console.error("Network error:", err);
-      fetchTotalUsers();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTotalUsers = async () => {
-    try {
-      const res = await fetch(`/api/position?fid=__dummy__`);
-      const data = await res.json();
-      setTotalUsers(data.total || 0);
-    } catch (err) {
-      console.error("Error fetching total:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [searchParams, setFid]);
 
   const getPositionText = () => {
     if (position === 1) return "🥇 You're FIRST on the waitlist!";
@@ -153,13 +154,12 @@ export default function JoinSuccess() {
       </Link>
 
       {/* ✅ New: Check Position Again */}
-<Link
-  href={`/check-position?fid=${fid}`}
-  className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition mb-4"
->
-  🔍 Check Your Position Again
-</Link>
-
+      <Link
+        href={`/check-position?fid=${fid}`}
+        className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition mb-4"
+      >
+        🔍 Check Your Position Again
+      </Link>
 
       {/* Share Button */}
       <button
