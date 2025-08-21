@@ -1,4 +1,3 @@
-// src/app/api/position/route.js
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -19,46 +18,32 @@ export async function GET(req) {
     );
   }
 
-  // --- 1) Get the user row (by fid or email) ---
-  const { data: user, error: userErr } = await supabase
-    .from("waitlist")
-    .select("created_at")
-    .eq(fid ? "fid" : "email", fid || email)
-    .single();
+  // --- 1) Find user by fid or email ---
+  let query = supabase.from("waitlist").select("created_at").single();
+  if (fid) query = query.eq("fid", fid);
+  if (email) query = query.eq("email", email);
+
+  const { data: user, error: userErr } = await query;
 
   if (userErr || !user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // --- 2) Count how many signed up before them ---
-  const { count: aheadCount, error: countErr } = await supabase
+  // --- 2) Count how many joined before them ---
+  const { count: aheadCount } = await supabase
     .from("waitlist")
     .select("*", { count: "exact", head: true })
     .lt("created_at", user.created_at);
 
-  if (countErr) {
-    return NextResponse.json(
-      { error: "Count failed", details: countErr.message },
-      { status: 500 }
-    );
-  }
-
-  // --- 3) Count total waitlist users ---
-  const { count: totalCount, error: totalErr } = await supabase
+  // --- 3) Count total users ---
+  const { count: totalCount } = await supabase
     .from("waitlist")
     .select("*", { count: "exact", head: true });
-
-  if (totalErr) {
-    return NextResponse.json(
-      { error: "Total count failed", details: totalErr.message },
-      { status: 500 }
-    );
-  }
 
   const position = (aheadCount ?? 0) + 1;
 
   return NextResponse.json({
     position,
-    total: totalCount ?? 0,
+    total: totalCount ?? position,
   });
 }
