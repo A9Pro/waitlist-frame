@@ -50,7 +50,7 @@ export default function CheckPosition() {
           type="text"
           placeholder="e.g. 12345"
           value={fid}
-          onChange={(e) => setFid(e.target.value)}
+          onChange={(event) => setFid(event.target.value)}
           className="w-full px-3 py-2 rounded bg-black/40 border border-purple-600 outline-none"
         />
 
