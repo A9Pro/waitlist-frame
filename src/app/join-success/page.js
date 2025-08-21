@@ -1,70 +1,53 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 export default function JoinSuccess() {
   const [position, setPosition] = useState(null);
   const [totalUsers, setTotalUsers] = useState(null);
-  const [userEmail, setUserEmail] = useState('');
+  const [userEmail, setUserEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const email = searchParams.get('email');
+    const email = searchParams.get("email");
     if (email) {
       setUserEmail(email);
       fetchUserPosition(email);
     } else {
-      // Fallback - get total count
       fetchTotalUsers();
     }
   }, [searchParams]);
 
   const fetchUserPosition = async (email) => {
     try {
-      // Get all users ordered by creation time
-      const { data: allUsers, error } = await supabase
-        .from('waitlist')
-        .select('id, email, created_at')
-        .eq('vote', 'yes')
-        .order('created_at', { ascending: true });
+      const res = await fetch(`/api/position?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
 
-      if (error) throw error;
-
-      // Find user position
-      const userIndex = allUsers.findIndex(user => user.email === email);
-      const userPosition = userIndex + 1;
-
-      setPosition(userPosition);
-      setTotalUsers(allUsers.length);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching user position:', error);
-      // Fallback to total count
+      if (res.ok) {
+        setPosition(data.position);
+        setTotalUsers(data.total);
+      } else {
+        console.error("API error:", data.error);
+        fetchTotalUsers(); // fallback
+      }
+    } catch (err) {
+      console.error("Network error:", err);
       fetchTotalUsers();
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchTotalUsers = async () => {
     try {
-      const { count, error } = await supabase
-        .from('waitlist')
-        .select('*', { count: 'exact', head: true })
-        .eq('vote', 'yes');
-
-      if (error) throw error;
-
-      setTotalUsers(count);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching total users:', error);
+      const res = await fetch(`/api/position?email=__dummy__`); // invalid email → will return total anyway
+      const data = await res.json();
+      setTotalUsers(data.total || 0);
+    } catch (err) {
+      console.error("Error fetching total:", err);
+    } finally {
       setLoading(false);
     }
   };
@@ -99,9 +82,7 @@ export default function JoinSuccess() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-6 bg-gradient-to-b from-purple-900 to-black text-white text-center">
       {/* Success Animation */}
-      <div className="text-6xl mb-6 animate-bounce">
-        {getPositionEmoji()}
-      </div>
+      <div className="text-6xl mb-6 animate-bounce">{getPositionEmoji()}</div>
 
       {/* Position Announcement */}
       {position ? (
@@ -124,11 +105,9 @@ export default function JoinSuccess() {
       {/* Waitlist Stats */}
       <div className="bg-gradient-to-r from-green-800/40 to-blue-800/40 border border-green-500 rounded-xl p-6 max-w-md mb-8">
         <div className="text-2xl font-bold text-green-400 mb-2">
-          {totalUsers || '...'} 
+          {totalUsers || "..."}
         </div>
-        <p className="text-sm opacity-90">
-          Total users joined the waitlist
-        </p>
+        <p className="text-sm opacity-90">Total users joined the waitlist</p>
         {position && position <= 100 && (
           <p className="text-xs opacity-75 mt-2">
             🎁 Top 100 users get exclusive early access!
@@ -138,7 +117,8 @@ export default function JoinSuccess() {
 
       {/* Main Message */}
       <p className="text-lg max-w-xl mb-8 opacity-90">
-        Congratulations — you&apos;ve secured your early-access spot for <strong>Farcaster Ringer</strong>.
+        Congratulations — you&apos;ve secured your early-access spot for{" "}
+        <strong>Farcaster Ringer</strong>.
         <br />
         You&apos;ll be among the first to know when we launch.
       </p>
@@ -149,7 +129,8 @@ export default function JoinSuccess() {
           💡 <strong>Want to move up the list?</strong>
         </p>
         <p className="text-xs opacity-60">
-          Share with friends who might be interested. The more early adopters, the better we can make Farcaster Ringer!
+          Share with friends who might be interested. The more early adopters,
+          the better we can make Farcaster Ringer!
         </p>
       </div>
 
@@ -157,7 +138,8 @@ export default function JoinSuccess() {
       {totalUsers && totalUsers > 10 && (
         <div className="bg-purple-900/30 rounded-xl p-4 border border-purple-600 w-full max-w-sm mb-10">
           <p className="text-sm opacity-60">
-            👥 {totalUsers} users are already building the future of Farcaster together
+            👥 {totalUsers} users are already building the future of Farcaster
+            together
           </p>
         </div>
       )}
@@ -175,13 +157,17 @@ export default function JoinSuccess() {
         onClick={() => {
           if (navigator.share) {
             navigator.share({
-              title: 'Farcaster Ringer - Early Access',
-              text: `I just joined the Farcaster Ringer waitlist! ${position ? `I'm #${position}!` : ''} Join me:`,
+              title: "Farcaster Ringer - Early Access",
+              text: `I just joined the Farcaster Ringer waitlist! ${
+                position ? `I'm #${position}!` : ""
+              } Join me:`,
               url: window.location.origin,
             });
           } else {
-            navigator.clipboard.writeText(`${window.location.origin}?ref=${userEmail}`);
-            alert('Link copied to clipboard!');
+            navigator.clipboard.writeText(
+              `${window.location.origin}?ref=${userEmail}`
+            );
+            alert("Link copied to clipboard!");
           }
         }}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
@@ -191,7 +177,8 @@ export default function JoinSuccess() {
 
       {/* Footer */}
       <p className="mt-8 text-xs opacity-50 max-w-sm">
-        Keep an eye on your inbox for updates. We can&apos;t wait to show you what&apos;s next.
+        Keep an eye on your inbox for updates. We can&apos;t wait to show you
+        what&apos;s next.
       </p>
     </main>
   );
