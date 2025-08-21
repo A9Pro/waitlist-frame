@@ -4,9 +4,9 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function JoinSuccess() {
-  const [position, setPosition] = useState<number | null>(null);
-  const [totalUsers, setTotalUsers] = useState<number | null>(null);
-  const [fid, setFid] = useState<string | null>(null);
+  const [position, setPosition] = useState(null);
+  const [totalUsers, setTotalUsers] = useState(null);
+  const [fid, setFid] = useState("");
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
 
@@ -20,9 +20,9 @@ export default function JoinSuccess() {
     }
   }, [searchParams]);
 
-  const fetchUserPosition = async (fidValue: string) => {
+  const fetchUserPosition = async (fid) => {
     try {
-      const res = await fetch(`/api/position?fid=${fidValue}`);
+      const res = await fetch(`/api/position?fid=${encodeURIComponent(fid)}`);
       const data = await res.json();
 
       if (res.ok) {
@@ -30,7 +30,7 @@ export default function JoinSuccess() {
         setTotalUsers(data.total);
       } else {
         console.error("API error:", data.error);
-        fetchTotalUsers(); // fallback
+        fetchTotalUsers();
       }
     } catch (err) {
       console.error("Network error:", err);
@@ -42,7 +42,6 @@ export default function JoinSuccess() {
 
   const fetchTotalUsers = async () => {
     try {
-      // dummy fid → still returns total
       const res = await fetch(`/api/position?fid=__dummy__`);
       const data = await res.json();
       setTotalUsers(data.total || 0);
@@ -57,17 +56,17 @@ export default function JoinSuccess() {
     if (position === 1) return "🥇 You're FIRST on the waitlist!";
     if (position === 2) return "🥈 You're #2 on the waitlist!";
     if (position === 3) return "🥉 You're #3 on the waitlist!";
-    if (position && position <= 10) return `🔥 You're #${position} on the waitlist!`;
-    if (position && position <= 50) return `⚡ You're #${position} on the waitlist!`;
-    if (position && position <= 100) return `🚀 You're #${position} on the waitlist!`;
-    return position ? `🎯 You're #${position} on the waitlist!` : "";
+    if (position <= 10) return `🔥 You're #${position} on the waitlist!`;
+    if (position <= 50) return `⚡ You're #${position} on the waitlist!`;
+    if (position <= 100) return `🚀 You're #${position} on the waitlist!`;
+    return `🎯 You're #${position} on the waitlist!`;
   };
 
   const getPositionEmoji = () => {
     if (position === 1) return "🎉";
-    if (position && position <= 10) return "🔥";
-    if (position && position <= 50) return "⚡";
-    if (position && position <= 100) return "🚀";
+    if (position <= 10) return "🔥";
+    if (position <= 50) return "⚡";
+    if (position <= 100) return "🚀";
     return "✨";
   };
 
@@ -99,7 +98,7 @@ export default function JoinSuccess() {
       {/* User FID */}
       {fid && (
         <p className="text-lg mb-4 opacity-90">
-          Welcome, <strong>FID {fid}</strong> 👋
+          Welcome, <strong>FID {fid}</strong>!
         </p>
       )}
 
@@ -153,6 +152,15 @@ export default function JoinSuccess() {
         Back to Home
       </Link>
 
+      {/* ✅ New: Check Position Again */}
+<Link
+  href={`/check-position?fid=${fid}`}
+  className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition mb-4"
+>
+  🔍 Check Your Position Again
+</Link>
+
+
       {/* Share Button */}
       <button
         onClick={() => {
@@ -171,7 +179,7 @@ export default function JoinSuccess() {
             alert("Link copied to clipboard!");
           }
         }}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+        className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition text-sm"
       >
         📤 Share with Friends
       </button>

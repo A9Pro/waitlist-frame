@@ -1,19 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function CheckPosition() {
+  const searchParams = useSearchParams();
   const [fid, setFid] = useState("");
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  async function handleCheck() {
+  // ✅ Auto-check if fid exists in URL
+  useEffect(() => {
+    const fidFromUrl = searchParams.get("fid");
+    if (fidFromUrl) {
+      setFid(fidFromUrl);
+      fetchPosition(fidFromUrl);
+    }
+  }, [searchParams]);
+
+  async function fetchPosition(fidValue) {
+    if (!fidValue) return;
     setLoading(true);
     setError(null);
     setPosition(null);
 
     try {
-      const res = await fetch(`/api/position?fid=${encodeURIComponent(fid)}`);
+      const res = await fetch(`/api/position?fid=${encodeURIComponent(fidValue)}`);
       const data = await res.json();
 
       if (!res.ok) {
@@ -43,13 +55,15 @@ export default function CheckPosition() {
         />
 
         <button
-          onClick={handleCheck}
+          onClick={() => fetchPosition(fid)}
           disabled={!fid || loading}
           className={`mt-4 w-full px-4 py-3 rounded-lg font-semibold transition
             ${!fid || loading ? "bg-gray-600 cursor-not-allowed" : "bg-yellow-500 text-black hover:bg-yellow-400"}`}
         >
           {loading ? "Checking..." : "Check"}
         </button>
+
+        {loading && <p className="mt-4 text-center">⏳ Fetching your position...</p>}
 
         {position && (
           <p className="mt-4 text-lg text-center">
