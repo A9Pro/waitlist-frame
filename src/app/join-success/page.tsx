@@ -1,6 +1,6 @@
 "use client";
 
-import WaitlistPosition from "@/components/WaitlistPosition";
+import WaitlistPosition from "../../components/WaitlistPosition";
 
 export default function JoinSuccessPage() {
   const fidFromAuth = null; // replace with actual FID from Farcaster auth
