@@ -1,50 +1,60 @@
-import { NextResponse, NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from 'next/server';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+interface WaitlistEntry {
+  fid: string;
+  position: number;
+  joinedAt: string;
+}
 
-export async function GET(req: NextRequest) {
+// In-memory storage (replace with database in production)
+let waitlist: WaitlistEntry[] = [
+  // Example entries for testing
+  { fid: "12345", position: 1, joinedAt: new Date().toISOString() },
+  { fid: "67890", position: 2, joinedAt: new Date().toISOString() },
+];
+
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const fid = searchParams.get("fid");
-    
+    const { searchParams } = new URL(request.url);
+    const fid = searchParams.get('fid');
+
     if (!fid) {
-      return NextResponse.json({ error: "Missing fid parameter" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'FID parameter is required' },
+        { status: 400 }
+      );
     }
 
-    // Get total count
-    const { count: total } = await supabase
-      .from("waitlist")
-      .select("*", { count: "exact", head: true });
-
-    // Find user's position (1-indexed)
-    const { data: userRecord } = await supabase
-      .from("waitlist")
-      .select("created_at")
-      .eq("fid", fid)
-      .single();
-
-    if (!userRecord) {
-      return NextResponse.json({ error: "User not found in waitlist" }, { status: 404 });
+    // Validate FID format (should be numeric)
+    if (!/^\d+$/.test(fid)) {
+      return NextResponse.json(
+        { error: 'FID must be a valid number' },
+        { status: 400 }
+      );
     }
 
-    // Count how many users joined before this user
-    const { count: beforeCount } = await supabase
-      .from("waitlist")
-      .select("*", { count: "exact", head: true })
-      .lt("created_at", userRecord.created_at);
+    // Find user in waitlist
+    const userEntry = waitlist.find(entry => entry.fid === fid);
 
-    const position = (beforeCount || 0) + 1;
+    if (!userEntry) {
+      return NextResponse.json(
+        { error: 'FID not found in waitlist. Please make sure you have joined the waitlist.' },
+        { status: 404 }
+      );
+    }
 
-    return NextResponse.json({ 
-      position, 
-      total: total || 0 
+    return NextResponse.json({
+      position: userEntry.position,
+      total: waitlist.length,
+      fid: userEntry.fid,
+      joinedAt: userEntry.joinedAt
     });
+
   } catch (error) {
-    console.error("Position API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('Position API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error occurred' },
+      { status: 500 }
+    );
   }
 }
