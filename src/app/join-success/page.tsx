@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function JoinSuccess() {
+function JoinSuccessContent() {
   const searchParams = useSearchParams();
   const [fid, setFid] = useState<string | null>(null);
   const [position, setPosition] = useState<number | null>(null);
@@ -88,5 +88,20 @@ export default function JoinSuccess() {
         📤 Share with Friends
       </button>
     </main>
+  );
+}
+
+export default function JoinSuccess() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen items-center justify-center text-white bg-gradient-to-b from-purple-900 to-black">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div>Loading...</div>
+        </div>
+      </main>
+    }>
+      <JoinSuccessContent />
+    </Suspense>
   );
 }
