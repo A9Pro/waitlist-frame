@@ -7,7 +7,7 @@ interface WaitlistEntry {
 }
 
 // In-memory storage (replace with database in production)
-let waitlist: WaitlistEntry[] = [
+const waitlist: WaitlistEntry[] = [
   // Example entries for testing
   { fid: "12345", position: 1, joinedAt: new Date().toISOString() },
   { fid: "67890", position: 2, joinedAt: new Date().toISOString() },
