@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -24,7 +23,7 @@ export default function HomePage() {
     <main className="flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-3xl font-bold">🚀 Waitlist Frame</h1>
       <p className="mt-2 text-lg">
-        Share this link on Warpcast to activate the frame:
+        Paste this link in Warpcast to test your frame:
       </p>
       <pre className="mt-4 bg-gray-900 text-white p-2 rounded">
         {process.env.NEXT_PUBLIC_SITE_URL}
