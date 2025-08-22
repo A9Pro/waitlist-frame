@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error){ 
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+  } catch (error) {
+  console.error('Join API error:', error);  // Now we're using the error
+  return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+}
 }
